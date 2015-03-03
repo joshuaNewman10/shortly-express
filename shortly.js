@@ -33,22 +33,52 @@ app.use(session({secret: '<mysecret>',
 var userStore = {
 
 };
+//------------------------------------------------//
 
-app.get('/', checkUser, function(req, res) {
+var logged = false;
+
+app.get('/', function(req, res) {
+  if( logged ) {
+    res.redirect('/index');
+  } else {
+    res.redirect('/login');
+  }
+});
+
+app.get('/create', function(req, res) {
+  if( logged ) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
+});
+
+app.get('/links', function(req, res) {
+  if( logged ) {
+    Links.reset().fetch(  ).then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    res.redirect('/login');
+  }
+});
+
+app.get('/signup', function(req,res){
+  res.render('signup');
+});
+
+app.get('/index', function(req, res) {
+  if( logged ) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
+});
+
+app.get('/login', function(req, res) {
   res.render('login');
 });
 
-app.get('/create',
-function(req, res) {
-  res.render('index');
-});
-
-app.get('/links',
-function(req, res) {
-  Links.reset().fetch(  ).then(function(links) {
-    res.send(200, links.models);
-  });
-});
 
 app.post('/links',
 function(req, res) {
@@ -88,25 +118,45 @@ function(req, res) {
 app.post('/login', function(req, res) {
   var user = req.body.username;
   var password = req.body.password;
-  var found = false;
-  if( userStore[user] ) {
-    if (userStore[user] === password){ //check password correct
-      checkUser()
-    } else { //password incorrec
-      req.render('login');
-      res.redirect('')
-    }
+  var verified = false;
+  if ( !userStore[user] ) {
+    console.log('should redirect to signup');
+    res.redirect('/signup');
   } else {
-    //send to signup
+    verified = checkUser(user, password);
   }
-  userStore[user] = password;
+
+  if( verified ) {
+    logged = true; //user now logged in
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
+
 });
 
+
+
+app.post('/signup', function (req,res){
+  var user = req.body.username;
+  var password = req.body.password;
+  userStore[user] = password;
+  logged = true;
+  res.redirect('/index');
+  console.log("this is a test for the store",userStore);
+
+});
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-function checkUser(req, res, next) {
 
+
+function checkUser(user, password) {
+  return userStore[user] === password ? true : false;
+}
+
+function loggedIn() {
+  return logged;
 }
 
 
