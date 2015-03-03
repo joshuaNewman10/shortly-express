@@ -18,8 +18,6 @@ app.use(session({secret:'supernova', saveUninitialized: true, resave: true})); /
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
-
-
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
 // Parse forms (signup/login)
@@ -27,9 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 // app.use(app.router);
 
-app.use(session({secret: '<mysecret>',
-                 saveUninitialized: true,
-                 resave: true}));
+
 
 
 var userStore = {
@@ -116,10 +112,13 @@ function(req, res) {
 });
 
 app.post('/login', function(req, res) {
+  if ( sameSession(req) ) {
+    logged = true;
+    res.render('index');
+  }
   var user = req.body.username;
   var password = req.body.password;
   var verified = false;
-  console.log(userStore);
   if ( !userStore[user] ) {
     res.redirect('/signup');
   } else {
@@ -180,7 +179,19 @@ function loggedIn() {
   return logged;
 }
 
+function sameSession(req) {
+  return req.session ===  session;
+}
 
+function logOut(request, response) {
+  if(request.url === '/logout'){
+   request.session.data.user = "Guest";
+   response.writeHead(200, {'Content-Type': 'text/plain'});
+   response.write('You\'ve been logged out');
+   response.end();
+   return;
+   }
+}
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
