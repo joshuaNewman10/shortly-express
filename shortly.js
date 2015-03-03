@@ -1,9 +1,10 @@
 var express = require('express');
+var session = require('express-session');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
-
+var cookieParser = require('cookie-parser');
+var cookieSession = require('cookie-session');
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
@@ -12,7 +13,8 @@ var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
 var app = express();
-
+app.use(cookieParser());
+app.use(session({secret:'supernova', saveUninitialized: true, resave: true})); //dunno
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -21,29 +23,36 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+// app.use(app.router);
+
+app.use(session({secret: '<mysecret>',
+                 saveUninitialized: true,
+                 resave: true}));
 
 
-app.get('/', 
+var userStore = {
+
+};
+
+app.get('/', checkUser, function(req, res) {
+  res.render('login');
+});
+
+app.get('/create',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/links',
 function(req, res) {
-  res.render('index');
-});
-
-app.get('/links', 
-function(req, res) {
-  Links.reset().fetch().then(function(links) {
+  Links.reset().fetch(  ).then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
-
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
     return res.send(404);
@@ -51,6 +60,7 @@ function(req, res) {
 
   new Link({ url: uri }).fetch().then(function(found) {
     if (found) {
+      console.log('successfully found the url');
       res.send(200, found.attributes);
     } else {
       util.getUrlTitle(uri, function(err, title) {
@@ -64,9 +74,10 @@ function(req, res) {
           title: title,
           base_url: req.headers.origin
         });
-
+        console.log('new link database obj', link);
         link.save().then(function(newLink) {
           Links.add(newLink);
+          // console.log('saved link and here it is: ',newLink);
           res.send(200, newLink);
         });
       });
@@ -74,10 +85,29 @@ function(req, res) {
   });
 });
 
+app.post('/login', function(req, res) {
+  var user = req.body.username;
+  var password = req.body.password;
+  var found = false;
+  if( userStore[user] ) {
+    if (userStore[user] === password){ //check password correct
+      checkUser()
+    } else { //password incorrec
+      req.render('login');
+      res.redirect('')
+    }
+  } else {
+    //send to signup
+  }
+  userStore[user] = password;
+});
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+function checkUser(req, res, next) {
 
+}
 
 
 /************************************************************/
