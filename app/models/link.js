@@ -13,9 +13,12 @@ var Link = db.Model.extend({
   },
   initialize: function(){
     this.on('creating', function(model, attrs, options){
+      console.log('links being created and all that stuff', model, attrs, options);
       var shasum = crypto.createHash('sha1');
       shasum.update(model.get('url'));
       model.set('code', shasum.digest('hex').slice(0, 5));
+      console.log(model.get('code'));
+      console.log(model.get('url'));
     });
   }
 });

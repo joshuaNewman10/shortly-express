@@ -104,10 +104,8 @@ function(req, res) {
           title: title,
           base_url: req.headers.origin
         });
-        console.log('new link database obj', link);
         link.save().then(function(newLink) {
           Links.add(newLink);
-          // console.log('saved link and here it is: ',newLink);
           res.send(200, newLink);
         });
       });
@@ -120,7 +118,6 @@ app.post('/login', function(req, res) {
   var password = req.body.password;
   var verified = false;
   if ( !userStore[user] ) {
-    console.log('should redirect to signup');
     res.redirect('/signup');
   } else {
     verified = checkUser(user, password);
@@ -136,15 +133,22 @@ app.post('/login', function(req, res) {
 });
 
 
-
 app.post('/signup', function (req,res){
   var user = req.body.username;
   var password = req.body.password;
   userStore[user] = password;
   logged = true;
-  res.redirect('/index');
-  console.log("this is a test for the store",userStore);
-
+  var user = new User({
+    username: user,
+    password: password,
+  });
+  user.save().then(function(user) {
+    Users.add(user);
+    console.log('added a new user');
+    res.send(200, user);
+    res.redirect('/index');
+  });
+  console.log(user, Users);
 });
 /************************************************************/
 // Write your authentication routes here
