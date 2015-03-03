@@ -33,7 +33,7 @@ app.use(session({secret: '<mysecret>',
 
 
 var userStore = {
-
+  'josh': 'password'
 };
 //------------------------------------------------//
 
@@ -119,6 +119,7 @@ app.post('/login', function(req, res) {
   var user = req.body.username;
   var password = req.body.password;
   var verified = false;
+  console.log(userStore);
   if ( !userStore[user] ) {
     res.redirect('/signup');
   } else {
@@ -158,15 +159,21 @@ app.post('/signup', function (req,res){
 
 
 function checkUser(user, password) {
+  var verified = false;
   new User({username: user}).fetch().then(function(found) {
     if ( found ) {
-      found.login(password);
+      console.log('found the user', found);
+      verified = found.login(password);
+      console.log(verified);
+      if ( verified ) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
-     return userStore[user] === password ? true : false;
-
+      return false;
     }
-  }
-  return userStore[user] === password ? true : false;
+  });
 }
 
 function loggedIn() {
