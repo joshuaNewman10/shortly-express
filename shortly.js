@@ -122,6 +122,7 @@ app.post('/login', function(req, res) {
   if ( !userStore[user] ) {
     res.redirect('/signup');
   } else {
+    console.log('about to check user');
     verified = checkUser(user, password);
   }
 
@@ -150,7 +151,6 @@ app.post('/signup', function (req,res){
     // res.send(200, user);
     res.redirect('/index');
   });
-  console.log(user, Users);
 });
 /************************************************************/
 // Write your authentication routes here
@@ -158,6 +158,14 @@ app.post('/signup', function (req,res){
 
 
 function checkUser(user, password) {
+  new User({username: user}).fetch().then(function(found) {
+    if ( found ) {
+      found.login(password);
+    } else {
+     return userStore[user] === password ? true : false;
+
+    }
+  }
   return userStore[user] === password ? true : false;
 }
 

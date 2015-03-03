@@ -14,18 +14,26 @@ var User = db.Model.extend({
   },
   initialize: function() {
     this.on('creating', function(model, attrs, options) {
-      bcrypt.genSalt(10, function(err, salt) {
-        // bcrypt.hash(attrs.password, salt, function(err, hash) {
-        // Store hash in your password DB.
-        console.log('hash and salt', salt);
-          // model.set('password', hash);
-          model.set('salt', salt);
-        // });
+       bcrypt.genSalt(10, function(err, salt) {
+          bcrypt.hash(model.get('password'), salt, null, function(err, hash) {
+              model.set('password' , hash
+              model.set('salt', salt);
+          });
       });
     });
-  },
-});
+  }
+},{
+ login: function(password) {
+  console.log('in login');
+  var model = this;
+  var salt = model.get('salt');
+  var hash = model.get('password');
+  bcrypt.compare(password, hash, function(err, res) {
+      return res;
+  });
 
+ }
+});
 module.exports = User;
 
 
