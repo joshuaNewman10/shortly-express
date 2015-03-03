@@ -18,6 +18,8 @@ app.use(session({secret:'supernova', saveUninitialized: true, resave: true})); /
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
+
+
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
 // Parse forms (signup/login)
@@ -145,7 +147,7 @@ app.post('/signup', function (req,res){
   user.save().then(function(user) {
     Users.add(user);
     console.log('added a new user');
-    res.send(200, user);
+    // res.send(200, user);
     res.redirect('/index');
   });
   console.log(user, Users);
