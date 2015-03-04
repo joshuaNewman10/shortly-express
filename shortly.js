@@ -67,20 +67,20 @@ app.get('/signup', function(req,res){
 app.post('/login', function(req, res) {
   var name = req.body.username;
   var password = req.body.password;
-
+  console.log(name, password);
   //look in database for that user
-  new User({username: name, password: password}).fetch().then(function(user) {
+  new User({username: name}).fetch().then(function(user) {
     if( user ) { //user exists
       user.comparePassword(password, function(success) {
         if( success ) { //user exists and correct password
           createSession(req, res, user);
-          res.redirect('/index');
+          res.render('index');
         } else { //user exists but wrong password
           res.redirect('/signup');
         }
       });
     } else { //user doesnt exist
-      console.log('user already signed up');
+      console.log('user not found');
       res.redirect('/signup');
       }
   });
@@ -99,18 +99,19 @@ app.post('/signup', function (req,res){
   var name = req.body.username;
   var password = req.body.password;
 
-  new User({username:name, password: password}).fetch().then(function(user){
-    if (user){
-      res.redirect('/index');
-    } else if (!user){
+  new User({username:name }).fetch().then(function(user){
+    if ( user ){
+      res.redirect('/login');
+    } else {
       var user = new User({
         username: name,
         password: password
       });
       user.save().then(function(savedUser){
+        console.log('made new user, in save');
         Users.add(savedUser);
-        var temp = createSession(req, res, savedUser);
-        res.redirect('/index');
+        createSession(req, res, savedUser);
+        res.render('index');
       });
     }
   });

@@ -24,14 +24,13 @@ var User = db.Model.extend({
     return cipher(this.get('password'), null, null)
       .bind(this)
       .then(function(hash) {
-        console.log('new hash password', hash);
         this.set('password', hash);
       });
   },
   comparePassword: function(enteredPassword, callback) {
    var password = this.get('password');
-   return bsync.compare(password, enteredPassword, function(err, result) {
-     callback(result)
+    bcrypt.compare(enteredPassword, password, function(err, result) {
+     callback(result);
    });
   }
 });
