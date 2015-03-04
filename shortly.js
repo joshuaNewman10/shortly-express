@@ -140,28 +140,27 @@ app.post('/login', function(req, res) {
 
 
 app.post('/signup', function (req,res){
-  var user = req.body.username;
+  var name = req.body.username;
   var password = req.body.password;
   // userStore[user] = password;
   // logged = true;
   //
-  new User({username:user, password: password}.fetch().then(function(user){
+  new User({username:name, password: password}).fetch().then(function(user){
     if (user){
       res.redirect('/signup');
     } else if (!user){
       var user = new User({
-        username: user,
+        username: name,
         password: password
       });
-      user.save().then(function(user){
-        Users.add(user);
+      user.save().then(function(savedUser){
+        Users.add(savedUser);
         console.log('added a new user');
-        res.send(200,user);
+        // res.send(200,user);
         res.redirect('/index');
       });
     }
-  })
-  );
+  });
 });
 
   // var user = new User({
