@@ -27,56 +27,94 @@ app.use(express.static(__dirname + '/public'));
 
 
 
-
-var userStore = {
-  'josh': 'password'
-};
-//------------------------------------------------//
-
-var logged = false;
-
-app.get('/', function(req, res) {
-  if( logged ) {
-    res.redirect('/index');
-  } else {
-    res.redirect('/login');
-  }
+app.get('/', checkSession, function(req, res) {
+   res.render('index');
 });
 
-app.get('/create', function(req, res) {
-  if( logged ) {
+app.get('/create', checkSession, function(req, res) {
     res.render('index');
-  } else {
-    res.redirect('/login');
-  }
 });
 
-app.get('/links', function(req, res) {
-  if( logged ) {
+app.get('/links', checkSession, function(req, res) {
     Links.reset().fetch(  ).then(function(links) {
       res.send(200, links.models);
     });
-  } else {
-    res.redirect('/login');
-  }
+});
+
+app.get('/index',checkSession, function(req, res) {
+    res.render('index');
+});
+
+
+
+
+
+
+
+
+/************************************************************/
+// Write your authentication routes here
+/************************************************************/
+
+app.get('/login', function(req, res) {
+  res.render('login');
 });
 
 app.get('/signup', function(req,res){
   res.render('signup');
 });
 
-app.get('/index', function(req, res) {
-  if( logged ) {
-    res.render('index');
-  } else {
-    res.redirect('/login');
-  }
+app.post('/login', function(req, res) {
+  var name = req.body.username;
+  var password = req.body.password;
+
+  //look in database for that user
+  new User({username: name, password: password}).fetch().then(function(user) {
+    if( user ) { //user exists
+      user.comparePassword(password, function(success) {
+        if( success ) { //user exists and correct password
+          createSession(req, res, user);
+          res.redirect('/index');
+        } else { //user exists but wrong password
+          res.redirect('/signup');
+        }
+      });
+    } else { //user doesnt exist
+      console.log('user already signed up');
+      res.redirect('/signup');
+      }
+  });
+  //if found that user
+  //  check users passed in password
+  //  check not already logged in
+  //  //if match
+  //    //redirect to index
+  //  //else
+  //    //send to signup page
+
 });
 
-app.get('/login', function(req, res) {
-  res.render('login');
-});
 
+app.post('/signup', function (req,res){
+  var name = req.body.username;
+  var password = req.body.password;
+
+  new User({username:name, password: password}).fetch().then(function(user){
+    if (user){
+      res.redirect('/index');
+    } else if (!user){
+      var user = new User({
+        username: name,
+        password: password
+      });
+      user.save().then(function(savedUser){
+        Users.add(savedUser);
+        var temp = createSession(req, res, savedUser);
+        res.redirect('/index');
+      });
+    }
+  });
+});
 
 app.post('/links',
 function(req, res) {
@@ -111,73 +149,9 @@ function(req, res) {
   });
 });
 
-app.post('/login', function(req, res) {
-  // req.session.data.user='test';
-  console.log('current sesssion', req.session, req.cookies);
-
-  if ( sameSession(req) ) {
-    logged = true;
-    res.render('index');
-  }
-  var user = req.body.username;
-  var password = req.body.password;
-  var verified = false;
-  if ( !userStore[user] ) {
-    res.redirect('/signup');
-  } else {
-    console.log('about to check user');
-    verified = checkUser(user, password);
-  }
-
-  if( verified ) {
-    logged = true; //user now logged in
-    res.render('index');
-  } else {
-    res.redirect('/login');
-  }
-
-});
-
-
-app.post('/signup', function (req,res){
-  var name = req.body.username;
-  var password = req.body.password;
-  // userStore[user] = password;
-  // logged = true;
-  //
-  new User({username:name, password: password}).fetch().then(function(user){
-    if (user){
-      res.redirect('/signup');
-    } else if (!user){
-      var user = new User({
-        username: name,
-        password: password
-      });
-      user.save().then(function(savedUser){
-        Users.add(savedUser);
-        console.log('added a new user');
-        // res.send(200,user);
-        res.redirect('/index');
-      });
-    }
-  });
-});
-
-  // var user = new User({
-  //   username: user,
-  //   password: password,
-  // });
-  // user.save().then(function(user) {
-  //   Users.add(user);
-  //   console.log('added a new user');
-  //   // res.send(200, user);
-  //   res.redirect('/index');
-  // });
-
 /************************************************************/
-// Write your authentication routes here
+// Write your authentication Functions here
 /************************************************************/
-
 
 function checkUser(user, password) {
   var verified = false;
@@ -197,22 +171,28 @@ function checkUser(user, password) {
   });
 }
 
-function loggedIn() {
-  return logged;
-}
-
-function sameSession(req) {
-  return req.session ===  session;
+function checkSession(req, res, next) {
+  var logged = req.session ? !!req.session.user : false;
+  if( logged ) {
+    next();
+  } else {
+    res.redirect('/login');
+  }
 }
 
 function logOut(request, response) {
   if(request.url === '/logout'){
-    request.session.data.user = "Guest";
-    response.writeHead(200, {'Content-Type': 'text/plain'});
-    response.write('You\'ve been logged out');
-    response.end();
-    return;
+    req.session.destroy(function() {
+      console.log('user been logged out');
+      res.redirect('/login');
+    });
   }
+}
+
+function createSession(req, res, user) {
+  return req.session.regenerate(function() {
+    req.session.user = user;
+  });
 }
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
