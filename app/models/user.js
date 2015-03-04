@@ -15,25 +15,25 @@ var User = db.Model.extend({
   links: function() {
     return this.hasMany(Link);
   },
-  login:  function(password) {
-    var model = this;
-    var salt = model.get('salt');
-    var hash = model.get('password');
-    return bcrypt.compareAsync(password, hash)
-    .then(function(result) {
-      return result;
-    });
-  },
   initialize: function() {
-    this.on('creating', function(model, attrs, options) {
-      return bcrypt.genSaltAsync(10).then(function(salt) {
-        return bcrypt.hashAsync(model.get('password'), salt, null)
-        .then(function(hash) {
-          model.set('password', hash);
-          model.set('salt', salt);
-        });
+    this.on('creating', this.storePassword);
+  },
+  storePassword: function() {
+    var cipher = bcrypt.hash;
+    var password = this.get('password');
+
+    return cipher(password, null, null
+      .bind(this)
+      .then(function(hash) {
+        this.set('password', hash);
       });
-    });
+  },
+  comparePassword: function(enteredPassword, callback) {
+
+   var password = this.get('password');
+   return bsync.compare(password, enteredPassword, function(err, result) {
+     return callback(result)
+   });
   }
 });
 

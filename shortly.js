@@ -112,6 +112,9 @@ function(req, res) {
 });
 
 app.post('/login', function(req, res) {
+  // req.session.data.user='test';
+  console.log('current sesssion', req.session, req.cookies);
+
   if ( sameSession(req) ) {
     logged = true;
     res.render('index');
@@ -139,19 +142,39 @@ app.post('/login', function(req, res) {
 app.post('/signup', function (req,res){
   var user = req.body.username;
   var password = req.body.password;
-  userStore[user] = password;
-  logged = true;
-  var user = new User({
-    username: user,
-    password: password,
-  });
-  user.save().then(function(user) {
-    Users.add(user);
-    console.log('added a new user');
-    // res.send(200, user);
-    res.redirect('/index');
-  });
+  // userStore[user] = password;
+  // logged = true;
+  //
+  new User({username:user, password: password}.fetch().then(function(user){
+    if (user){
+      res.redirect('/signup');
+    } else if (!user){
+      var user = new User({
+        username: user,
+        password: password
+      });
+      user.save().then(function(user){
+        Users.add(user);
+        console.log('added a new user');
+        res.send(200,user);
+        res.redirect('/index');
+      });
+    }
+  })
+  );
 });
+
+  // var user = new User({
+  //   username: user,
+  //   password: password,
+  // });
+  // user.save().then(function(user) {
+  //   Users.add(user);
+  //   console.log('added a new user');
+  //   // res.send(200, user);
+  //   res.redirect('/index');
+  // });
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -185,12 +208,12 @@ function sameSession(req) {
 
 function logOut(request, response) {
   if(request.url === '/logout'){
-   request.session.data.user = "Guest";
-   response.writeHead(200, {'Content-Type': 'text/plain'});
-   response.write('You\'ve been logged out');
-   response.end();
-   return;
-   }
+    request.session.data.user = "Guest";
+    response.writeHead(200, {'Content-Type': 'text/plain'});
+    response.write('You\'ve been logged out');
+    response.end();
+    return;
+  }
 }
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
