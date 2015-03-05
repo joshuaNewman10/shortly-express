@@ -50,8 +50,6 @@ app.get('/index',checkSession, function(req, res) {
 
 
 
-
-
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -63,6 +61,11 @@ app.get('/login', function(req, res) {
 app.get('/signup', function(req,res){
   res.render('signup');
 });
+
+app.get('/logout', function(req, res) {
+  res.render('logout');
+});
+
 
 app.post('/login', function(req, res) {
   var name = req.body.username;
@@ -84,14 +87,6 @@ app.post('/login', function(req, res) {
       res.redirect('/signup');
       }
   });
-  //if found that user
-  //  check users passed in password
-  //  check not already logged in
-  //  //if match
-  //    //redirect to index
-  //  //else
-  //    //send to signup page
-
 });
 
 
@@ -150,6 +145,10 @@ function(req, res) {
   });
 });
 
+app.post('/logout', logOut, function(req, res) {
+  res.redirect('/login');
+});
+
 /************************************************************/
 // Write your authentication Functions here
 /************************************************************/
@@ -181,13 +180,11 @@ function checkSession(req, res, next) {
   }
 }
 
-function logOut(request, response) {
-  if(request.url === '/logout'){
-    req.session.destroy(function() {
-      console.log('user been logged out');
-      res.redirect('/login');
-    });
-  }
+function logOut(request, response, next) {
+  request.session.destroy(function() {
+    console.log('user been logged out');
+  });
+  next();
 }
 
 function createSession(req, res, user) {
